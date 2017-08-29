@@ -1,0 +1,26 @@
+#!/bin/bash
+
+KS=mydb1
+TABLE=user
+DST_DIR=/root/backup-$KS-$TABLE-$(date +%Y%m%d) # timestamped destination directory
+
+AUTH='--username cassandra --password cassandra'
+#AUTH='' # if no auth is used
+
+for node in c1 c2 c3 c4
+do
+    echo
+    echo "node: $node"
+    mkdir -p $DST_DIR/$node/$KS/$TABLE
+
+    ssh -n $node nodetool $AUTH clearsnapshot $KS
+    ssh -n $node nodetool $AUTH snapshot --table $TABLE $KS
+
+    LAST_SNAPSHOT_DIR=''
+    LAST_SNAPSHOT_DIR=$( ssh -n $node ls -dt /var/lib/cassandra/data/$KS/$TABLE-\*/snapshots/\[0-9\]\* | head -1 )
+    [ "$LAST_SNAPSHOT_DIR" ] || continue
+
+    echo scp $node:$LAST_SNAPSHOT_DIR/* $DST_DIR/$node/$KS/$TABLE
+         scp $node:$LAST_SNAPSHOT_DIR/* $DST_DIR/$node/$KS/$TABLE
+done
+

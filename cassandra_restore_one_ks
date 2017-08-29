@@ -1,0 +1,39 @@
+#!/bin/bash
+
+KS=mydb1
+DIR=/root/backup-$KS-$(date +%Y%m%d) # timestamped destination directory
+
+AUTH='--username cassandra --password cassandra'
+#AUTH='' # if no auth is used
+
+if [ ! -f $DIR/schema.cql ]
+then
+    echo fatal error: $DIR/schema.cql was not found
+    exit 1
+fi
+
+cqlsh $AUTH c1 -e "drop keyspace $KS ;" 
+
+echo keyspace $KS is dropped. ENTER to continue
+read tmp
+
+cqlsh $AUTH c1 <$DIR/schema.cql
+
+echo keyspace $KS is created. ENTER to continue
+read tmp
+
+for node in c1 c2 c3 c4
+do
+    echo
+    echo "node: $node"
+
+    cd $DIR/$node/$KS
+    TABLES=$(ls)
+    
+    for t in $TABLES
+    do 
+        echo sstableloader $AUTH -d c1 $DIR/$node/$KS/$t
+             sstableloader $AUTH -d c1 $DIR/$node/$KS/$t
+    done
+
+done
