@@ -1,7 +1,8 @@
 #!/bin/bash
 
 KS=weather
-DIR=/root/backup-$KS-20190927 # timestamped destination directory
+TABLE=temperature
+DIR=/root/backup-$KS-$TABLE-20190927 # timestamped destination directory
 
 AUTH='--username cassandra --password cassandra'
 #AUTH='' # if no auth is used
@@ -9,18 +10,13 @@ AUTH='--username cassandra --password cassandra'
 one_node=10.135.221.62
 all_nodes="10.135.221.62 10.135.220.14 10.135.220.10"
 
-if [ ! -f $DIR/schema.cql ]
-then
-    echo fatal error: $DIR/schema.cql was not found
-    exit 1
-fi
-
-cqlsh $AUTH $one_node  -e "drop keyspace $KS ;" 
-echo keyspace $KS is dropped. ENTER to continue
+cqlsh $AUTH $one_node  -e "drop table ${KS}.$TABLE ;" 
+echo table ${KS}.$TABLE is dropped. ENTER to continue
 read tmp
 
-echo creating the keyspace using $DIR/schema.cql
-cqlsh $AUTH $one_node <$DIR/schema.cql
+echo creating the table ${KS}.$TABLE using $DIR/$one_node/$KS/$TABLE/schema.cql
+
+cqlsh $AUTH $one_node <$DIR/$one_node/$KS/$TABLE/schema.cql
 echo keyspace $KS is created. ENTER to continue
 read tmp
 
@@ -30,11 +26,9 @@ do
     echo "node: $node"
 
     cd $DIR/$node/$KS
-    TABLES=$(ls)
     
-    for t in $TABLES
-    do 
+    t=$TABLE
         echo sstableloader $AUTH -d $one_node $DIR/$node/$KS/$t
              sstableloader $AUTH -d $one_node $DIR/$node/$KS/$t
-    done
 done
+

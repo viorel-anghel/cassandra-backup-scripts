@@ -1,13 +1,16 @@
 #!/bin/bash
 
-KS=mydb1
-TABLE=user
+KS=weather
+TABLE=temperature
 DST_DIR=/root/backup-$KS-$TABLE-$(date +%Y%m%d) # timestamped destination directory
+
+one_node=10.135.221.62
+all_nodes="10.135.221.62 10.135.220.14 10.135.220.10"
 
 AUTH='--username cassandra --password cassandra'
 #AUTH='' # if no auth is used
 
-for node in c1 c2 c3 c4
+for node in $all_nodes
 do
     echo
     echo "node: $node"
